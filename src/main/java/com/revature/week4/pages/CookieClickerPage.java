@@ -108,8 +108,16 @@ public class CookieClickerPage {
         buyProductUntilCount("Cursor", 5);
         buyProductUntilCount("Grandma", 1);
         buyProductUntilCount("Cursor", 10);
-        buyProductUntilCount("Grandma", 5);
+        buyProductUntilCount("Grandma", 1);
         buyProductUntilCount("Farm", 1);
+        buyProductUntilCount("Grandma", 5);
+
+        clickCookieUntilCount(1000);
+        buyUpgrade("Forwards from grandma", 10);
+
+        buyProductUntilCount("Farm", 3);
+        buyProductUntilCount("Grandma", 10);
+        buyProductUntilCount("Farm", 5);
     }
 
     public void buyProductUntilCount(String name, int targetCount) {
