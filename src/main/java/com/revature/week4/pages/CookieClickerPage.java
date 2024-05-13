@@ -31,6 +31,15 @@ public class CookieClickerPage {
     @FindBy(id = "cookies")
     private WebElement cookieCount;
 
+    @FindBy(id = "storeBulk1")
+    private WebElement storeBulk1;
+
+    @FindBy(id = "storeBulk10")
+    private WebElement storeBulk10;
+
+    @FindBy(id = "storeBulk100")
+    private WebElement storeBulk100;
+
     public CookieClickerPage(WebDriver driver) {
         this.driver = driver;
     }
@@ -135,6 +144,24 @@ public class CookieClickerPage {
             {
                 clickCookieUntilCount(cost);
             }
+        }
+    }
+
+    //Is there a better way to do this?
+    public void setBuyIncrement(int increment) {
+        switch (increment) {
+            case 100:
+                storeBulk100.click();
+                break;
+            case 10:
+                storeBulk10.click();
+                break;
+            case 1:
+                storeBulk1.click();
+                break;
+            default:
+                System.out.println("setBuyIncrement: Only 1/10/100 is allowed.");
+                break;
         }
     }
 
