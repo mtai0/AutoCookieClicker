@@ -1,6 +1,5 @@
 package com.revature.week4.pages;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -51,7 +50,7 @@ public class CookieClickerPage {
             acceptCookiesButton.click();
             System.out.println("Accepted Cookies!");
         } catch (Exception e) {
-            System.out.println("Accept Cookies button not found.");
+            System.out.println("ERROR: Accept Cookies button not found.");
             e.printStackTrace();
         }
     }
@@ -61,7 +60,7 @@ public class CookieClickerPage {
             selectLanguageButton.click();
             System.out.println("Set EN Language!");
         } catch (Exception e) {
-            System.out.println("Set EN Language button not found.");
+            System.out.println("ERROR: Set EN Language button not found.");
             e.printStackTrace();
         }
     }
@@ -71,19 +70,83 @@ public class CookieClickerPage {
             backupNote.click();
             System.out.println("Ignored Backup Note!");
         } catch (Exception e) {
-            System.out.println("Backup Note not found.");
+            System.out.println("ERROR: Backup Note not found.");
             e.printStackTrace();
         }
     }
 
     public void gameplayLoop() {
-        clickCookieMultiple(15);
-        buyUpgrades();
+        clickCookieMultiple(150);
         System.out.println(getCookieCount());
+        buyUpgrades();
     }
 
     private void buyUpgrades() {
         List<WebElement> availableUpgrades = driver.findElements(By.cssSelector("div[class='product unlocked enabled']"));
+        for (WebElement upgrade : availableUpgrades) {
+            printProductInfo(upgrade);
+        }
+    }
+
+    private void printProductInfo(WebElement product) {
+        WebElement content = product.findElement(By.className("content"));
+        if (content != null) {
+
+            String productInfoString = "Name: ";
+            WebElement nameElement = content.findElement(By.className("productName"));
+            if (nameElement != null) {
+                productInfoString += nameElement.getText();
+            }
+            else {
+                System.out.println("ERROR: printProductInfo: Could not find product name.");
+                productInfoString += "ERROR";
+            }
+
+            String priceInfoString = "Price: ";
+            int price = -1;
+            WebElement priceElement = content.findElement(By.className("price"));
+            if (priceElement != null) {
+                try {
+                    price = Integer.parseInt(priceElement.getText());
+                }
+                catch(NumberFormatException e) {
+                    System.out.println("ERROR: printProductInfo: Could not parse price.");
+                    e.printStackTrace();
+                }
+            }
+            else {
+                System.out.println("ERROR: printProductInfo: Could not find price.");
+            }
+            priceInfoString += (price > 0 ? Integer.toString(price) : "ERROR");
+
+            String countInfoString = "Count: ";
+            int count = -1;
+            WebElement countElement = content.findElement(By.className("owned"));
+            if (countElement != null) {
+                String countText = countElement.getText();
+                if (!countText.isEmpty()) {
+                    try {
+                        count = Integer.parseInt(countText);
+                    }
+                    catch(NumberFormatException e) {
+                        System.out.println("ERROR: printProductInfo: Could not parse count.");
+                        e.printStackTrace();
+                    }
+                }
+                else {
+                    count = 0;
+                }
+            }
+            else {
+                System.out.println("ERROR: printProductInfo: Could not find count.");
+            }
+            countInfoString += (count >= 0 ? Integer.toString(count) : "ERROR");
+
+            System.out.println(productInfoString + "\n" + priceInfoString + "\n" + countInfoString + "\n");
+        }
+        else {
+            System.out.println("printProudctInfo: " + product.toString() +": Could not find content.");
+        }
     }
 
     public boolean clickCookie() {
@@ -105,6 +168,7 @@ public class CookieClickerPage {
         }
     }
 
+    //This might lag behind the actual cookie count a bit
     public int getCookieCount() {
         String cookieText = "";
         try {
@@ -132,5 +196,20 @@ public class CookieClickerPage {
             e.printStackTrace();
         }
         return cookieCount;
+    }
+
+    private class ShopProduct {
+        private String name;
+        private int cost, count;
+
+        public ShopProduct(String name, int cost, int count){
+            this.name = name;
+            this.cost = cost;
+            this.count = count;
+        }
+
+        public String getName() { return name; }
+        public int getCost() { return cost; }
+        public int getCount() { return count; }
     }
 }
