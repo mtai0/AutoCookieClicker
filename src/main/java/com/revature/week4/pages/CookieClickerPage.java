@@ -1,6 +1,7 @@
 package com.revature.week4.pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
@@ -85,14 +86,18 @@ public class CookieClickerPage {
         //Not sure if it's possible for clicks to get lost,
         //Which is why I'm using clickCookieUntilCount instead of clickMultiple
         clickCookieUntilCount(15);
-        BuyProduct("Cursor");
+        buyProduct("Cursor");
+
         clickCookieUntilCount(100);
-        BuyUpgrade("Reinforced index finger");
+        buyUpgrade("Reinforced index finger", 10);
+        new Actions(driver).moveToElement(bigCookie).perform();
+
         clickCookieUntilCount(500);
-        BuyUpgrade("Carpal tunnel prevention cream");
+        buyUpgrade("Carpal tunnel prevention cream", 10);
+        new Actions(driver).moveToElement(bigCookie).perform();
     }
 
-    private boolean BuyProduct(String name) {
+    private boolean buyProduct(String name) {
         HashMap<String, ShopProduct> catalog = getProductCatalog();
         boolean bought = false;
         ShopProduct product = catalog.get(name);
@@ -174,14 +179,28 @@ public class CookieClickerPage {
         return product;
     }
 
-    private boolean BuyUpgrade(String name) {
-        HashMap<String, ShopUpgrade> catalog = getUpgradeCatalog();
+    private boolean buyUpgrade(String name, int retryCount) {
         boolean bought = false;
-        ShopUpgrade upgrade = catalog.get(name);
-        if (upgrade != null) {
-            bought = upgrade.buy();
-            if (bought) {
-                System.out.println("Bought " + name);
+        int attempts = 0;
+        while (!bought && attempts < retryCount) {
+            int currentCookies = getCookieCount();
+            HashMap<String, ShopUpgrade> catalog = getUpgradeCatalog();
+            ShopUpgrade upgrade = catalog.get(name);
+            if (upgrade != null) {
+                //Redundant check to account for delays in the number updating.
+                if (upgrade.cost > getCookieCount()) {
+                    System.out.println("buyUpgrade : Not enough money for " + name);
+                    return false;
+                }
+                bought = upgrade.buy();
+                if (bought) {
+                    System.out.println("buyUpgrade : Bought " + name);
+                }
+            }
+            attempts++;
+
+            if (!bought && attempts >= retryCount) {
+                System.out.println("buyUpgrade : Could not buy upgrade after max retries.");
             }
         }
         return bought;
@@ -207,9 +226,6 @@ public class CookieClickerPage {
                 upgradeCatalog.put(upgrade.getName(), upgrade);
             }
         }
-
-        //Why does this cause a stale element exception?
-        //new Actions(driver).moveToElement(bigCookie).perform();
 
         return upgradeCatalog;
     }
@@ -389,8 +405,7 @@ public class CookieClickerPage {
                 return true;
             }
             catch (Exception e) {
-                System.out.println("ERROR: ShopUpgrade::buy : Could not buy item.");
-                e.printStackTrace();
+                System.out.println("ERROR: ShopUpgrade::buy : Could not buy item due to an exception.");
             }
             return bought;
         }
