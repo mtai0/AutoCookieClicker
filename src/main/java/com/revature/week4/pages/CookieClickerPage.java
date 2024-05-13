@@ -1,7 +1,6 @@
 package com.revature.week4.pages;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
@@ -15,6 +14,7 @@ import java.util.List;
 
 public class CookieClickerPage {
     private WebDriver driver;
+    private int buyIncrement = 1;
 
     @FindBy(css = "a[href = '#null']")
     private WebElement acceptCookiesButton;
@@ -88,35 +88,92 @@ public class CookieClickerPage {
         clickCookieUntilCount(15);
         buyProduct("Cursor");
 
+        buyProductUntilCount("Cursor", 1);
+
         clickCookieUntilCount(100);
         buyUpgrade("Reinforced index finger", 10);
-        new Actions(driver).moveToElement(bigCookie).perform();
 
         clickCookieUntilCount(500);
         buyUpgrade("Carpal tunnel prevention cream", 10);
-        new Actions(driver).moveToElement(bigCookie).perform();
+
+        buyProductUntilCount("Cursor", 5);
+        buyProductUntilCount("Grandma", 1);
+        buyProductUntilCount("Cursor", 10);
+        buyProductUntilCount("Grandma", 5);
+        buyProductUntilCount("Farm", 1);
+    }
+
+    public void buyProductUntilCount(String name, int targetCount) {
+        int productCount = 0;
+
+        HashMap<String, ShopProduct> catalog = getCompleteProductCatalog();
+        ShopProduct product = catalog.get(name);
+        if (product == null) {
+            System.out.println("ERROR: buyProductUntilCount : Could not find product, aborting.");
+            return;
+        }
+
+        productCount = product.getCount();
+
+        while (productCount < targetCount) {
+            int cost = product.getCost();
+            if (cost < getCookieCount()) {
+
+                try{
+                    product.buy();
+                    productCount += buyIncrement;
+                }
+                catch(Exception e) {
+                    System.out.println("ERROR: buyProductUntilCount : Exception while buying item.");
+                }
+
+                //Reset stuff after buying to prevent stale element
+                catalog = getCompleteProductCatalog();
+                product = catalog.get(name);
+            }
+            else
+            {
+                clickCookieUntilCount(cost);
+            }
+        }
     }
 
     private boolean buyProduct(String name) {
-        HashMap<String, ShopProduct> catalog = getProductCatalog();
+        return buyProduct(name, getAvailableProductCatalog());
+    }
+
+    private boolean buyProduct(String name, HashMap<String, ShopProduct> catalog) {
         boolean bought = false;
         ShopProduct product = catalog.get(name);
         if (product != null) {
             bought = product.buy();
             if (bought) {
-                System.out.println("Bought " + name);
+                System.out.println("buyProduct : Bought " + name);
             }
         }
         return bought;
     }
 
-    private HashMap<String, ShopProduct> getProductCatalog() {
+    private HashMap<String, ShopProduct> getAvailableProductCatalog() {
         HashMap<String, ShopProduct> productCatalog = new HashMap<String, ShopProduct>();
         List<WebElement> availableProducts = driver.findElements(By.cssSelector("div[class='product unlocked enabled']"));
         for (WebElement element : availableProducts) {
             ShopProduct product = createShopProduct(element);
             //System.out.println(product.toString() + "\n");
             if (product != null) {
+                productCatalog.put(product.getName(), product);
+            }
+        }
+        return productCatalog;
+    }
+
+    private HashMap<String, ShopProduct> getCompleteProductCatalog() {
+        HashMap<String, ShopProduct> productCatalog = new HashMap<String, ShopProduct>();
+        List<WebElement> allProducts = driver.findElements(By.className("product"));
+        for (WebElement element : allProducts) {
+            ShopProduct product = createShopProduct(element);
+            if (product != null) {
+                System.out.println(product.toString() + "\n");
                 productCatalog.put(product.getName(), product);
             }
         }
@@ -142,7 +199,7 @@ public class CookieClickerPage {
             WebElement priceElement = element.findElement(By.className("price"));
             if (priceElement != null) {
                 try {
-                    cost = Integer.parseInt(priceElement.getText());
+                    cost = Integer.parseInt(priceElement.getText().replace(",", "").trim());
                 }
                 catch(NumberFormatException e) {
                     System.out.println("ERROR: createShopProduct: Could not parse price.");
@@ -158,7 +215,7 @@ public class CookieClickerPage {
                 String countText = countElement.getText();
                 if (!countText.isEmpty()) {
                     try {
-                        count = Integer.parseInt(countText);
+                        count = Integer.parseInt(countText.replace(",", "").trim());
                     }
                     catch(NumberFormatException e) {
                         System.out.println("ERROR: createShopProduct: Could not parse count.");
@@ -252,7 +309,7 @@ public class CookieClickerPage {
             wait.until(ExpectedConditions.visibilityOf(costElement));
             if (costElement != null) costString = costElement.getText();
             try {
-                cost = Integer.parseInt(costString);
+                cost = Integer.parseInt(costString.replace(",", "").trim());
             }
             catch (NumberFormatException e) {
                 System.out.println("ERROR: createShopUpgrade : Failed to parse cost.");
@@ -325,7 +382,7 @@ public class CookieClickerPage {
                 String[] split = cookieText.split(" ");
                 if (split.length > 0) {
                     cookieText = split[0];
-                    cookieCount = Integer.parseInt(cookieText);
+                    cookieCount = Integer.parseInt(cookieText.replace(",", "").trim());
                 }
                 else
                 {
