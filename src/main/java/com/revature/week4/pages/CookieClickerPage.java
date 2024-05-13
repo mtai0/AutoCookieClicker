@@ -8,6 +8,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 
 public class CookieClickerPage {
@@ -82,46 +83,49 @@ public class CookieClickerPage {
     }
 
     private void buyUpgrades() {
-        List<WebElement> availableUpgrades = driver.findElements(By.cssSelector("div[class='product unlocked enabled']"));
-        for (WebElement upgrade : availableUpgrades) {
-            printProductInfo(upgrade);
+        HashMap<String, ShopProduct> productCatalog = new HashMap<String, ShopProduct>();
+        List<WebElement> availableProducts = driver.findElements(By.cssSelector("div[class='product unlocked enabled']"));
+        for (WebElement element : availableProducts) {
+            //printProductInfo(upgrade);
+            ShopProduct product = createShopProduct(element);
+            System.out.println(product.toString() + "\n");
+            if (product != null) {
+                productCatalog.put(product.getName(), product);
+            }
         }
     }
 
-    private void printProductInfo(WebElement product) {
-        WebElement content = product.findElement(By.className("content"));
-        if (content != null) {
+    private ShopProduct createShopProduct(WebElement element) {
+        ShopProduct product = null;
 
-            String productInfoString = "Name: ";
-            WebElement nameElement = content.findElement(By.className("productName"));
-            if (nameElement != null) {
-                productInfoString += nameElement.getText();
-            }
-            else {
-                System.out.println("ERROR: printProductInfo: Could not find product name.");
-                productInfoString += "ERROR";
-            }
+        String name = "";
+        int cost = -1, count = -1;
 
-            String priceInfoString = "Price: ";
-            int price = -1;
-            WebElement priceElement = content.findElement(By.className("price"));
+        WebElement nameElement = element.findElement(By.className("productName"));
+        if (nameElement != null) {
+            name = nameElement.getText();
+        }
+        else {
+            System.out.println("ERROR: createShopProduct: Could not find product name.");
+        }
+
+        //Only create product listing if name is valid.
+        if (!name.isEmpty()) {
+            WebElement priceElement = element.findElement(By.className("price"));
             if (priceElement != null) {
                 try {
-                    price = Integer.parseInt(priceElement.getText());
+                    cost = Integer.parseInt(priceElement.getText());
                 }
                 catch(NumberFormatException e) {
-                    System.out.println("ERROR: printProductInfo: Could not parse price.");
+                    System.out.println("ERROR: createShopProduct: Could not parse price.");
                     e.printStackTrace();
                 }
             }
             else {
-                System.out.println("ERROR: printProductInfo: Could not find price.");
+                System.out.println("ERROR: createShopProduct: Could not find price.");
             }
-            priceInfoString += (price > 0 ? Integer.toString(price) : "ERROR");
 
-            String countInfoString = "Count: ";
-            int count = -1;
-            WebElement countElement = content.findElement(By.className("owned"));
+            WebElement countElement = element.findElement(By.className("owned"));
             if (countElement != null) {
                 String countText = countElement.getText();
                 if (!countText.isEmpty()) {
@@ -129,7 +133,7 @@ public class CookieClickerPage {
                         count = Integer.parseInt(countText);
                     }
                     catch(NumberFormatException e) {
-                        System.out.println("ERROR: printProductInfo: Could not parse count.");
+                        System.out.println("ERROR: createShopProduct: Could not parse count.");
                         e.printStackTrace();
                     }
                 }
@@ -140,13 +144,11 @@ public class CookieClickerPage {
             else {
                 System.out.println("ERROR: printProductInfo: Could not find count.");
             }
-            countInfoString += (count >= 0 ? Integer.toString(count) : "ERROR");
 
-            System.out.println(productInfoString + "\n" + priceInfoString + "\n" + countInfoString + "\n");
+            product = new ShopProduct(element, name, cost, count);
         }
-        else {
-            System.out.println("printProudctInfo: " + product.toString() +": Could not find content.");
-        }
+
+        return product;
     }
 
     public boolean clickCookie() {
@@ -199,10 +201,12 @@ public class CookieClickerPage {
     }
 
     private class ShopProduct {
+        private WebElement element;
         private String name;
         private int cost, count;
 
-        public ShopProduct(String name, int cost, int count){
+        public ShopProduct(WebElement element, String name, int cost, int count) {
+            this.element = element;
             this.name = name;
             this.cost = cost;
             this.count = count;
@@ -211,5 +215,9 @@ public class CookieClickerPage {
         public String getName() { return name; }
         public int getCost() { return cost; }
         public int getCount() { return count; }
+
+        public String toString() {
+            return name + "\nCost: " + cost + "\nCount: " + count;
+        }
     }
 }
