@@ -173,7 +173,7 @@ public class CookieClickerPage {
         for (WebElement element : allProducts) {
             ShopProduct product = createShopProduct(element);
             if (product != null) {
-                System.out.println(product.toString() + "\n");
+                //System.out.println(product.toString() + "\n");
                 productCatalog.put(product.getName(), product);
             }
         }
