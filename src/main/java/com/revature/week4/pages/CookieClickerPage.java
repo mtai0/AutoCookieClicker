@@ -39,11 +39,14 @@ public class CookieClickerPage {
 
     //First-time setup before getting to the meat of the program
     public void setup() {
-        //Set a long implicit wait because this website can take a while to load
+        //Set a long implicit wait because this website can take a while to load.
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(180));
         acceptCookies();
         setLanguage();
         ignoreBackupNote();
+
+        //Once everything is loaded, the implicit wait can be lowered.
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
     }
 
     private void acceptCookies() {
@@ -77,22 +80,36 @@ public class CookieClickerPage {
     }
 
     public void gameplayLoop() {
-        clickCookieMultiple(150);
-        System.out.println(getCookieCount());
-        buyUpgrades();
+        clickCookieMultiple(15);
+        //System.out.println(getCookieCount());
+        HashMap<String, ShopProduct> catalog = getProductCatalog();
+        BuyProduct("Cursor", catalog);
     }
 
-    private void buyUpgrades() {
+    public boolean BuyProduct(String name) {
+        return BuyProduct(name, getProductCatalog());
+    }
+
+    private boolean BuyProduct(String name, HashMap<String, ShopProduct> catalog) {
+        boolean bought = false;
+        ShopProduct product = catalog.get(name);
+        if (product != null) {
+            bought = product.buy();
+        }
+        return bought;
+    }
+
+    private HashMap<String, ShopProduct> getProductCatalog() {
         HashMap<String, ShopProduct> productCatalog = new HashMap<String, ShopProduct>();
         List<WebElement> availableProducts = driver.findElements(By.cssSelector("div[class='product unlocked enabled']"));
         for (WebElement element : availableProducts) {
-            //printProductInfo(upgrade);
             ShopProduct product = createShopProduct(element);
-            System.out.println(product.toString() + "\n");
+            //System.out.println(product.toString() + "\n");
             if (product != null) {
                 productCatalog.put(product.getName(), product);
             }
         }
+        return productCatalog;
     }
 
     private ShopProduct createShopProduct(WebElement element) {
@@ -218,6 +235,30 @@ public class CookieClickerPage {
 
         public String toString() {
             return name + "\nCost: " + cost + "\nCount: " + count;
+        }
+
+        public boolean buy() {
+            boolean bought = false;
+            try {
+                new WebDriverWait(driver, Duration.ofMillis(500))
+                        .until(ExpectedConditions.elementToBeClickable(element)).click();
+                return true;
+            }
+            catch (Exception e) {
+                System.out.println("ERROR: ShopProduct::buy : Could not buy item.");
+                e.printStackTrace();
+            }
+            return bought;
+        }
+    }
+
+    private class ShopUpgrade {
+        private WebElement element;
+        private int id;
+
+        public ShopUpgrade(WebElement element, int id) {
+            this.element = element;
+            this.id = id;
         }
     }
 }
