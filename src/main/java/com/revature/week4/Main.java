@@ -15,7 +15,7 @@ public class Main {
 
         CookieClickerPage page = PageFactory.initElements(driver, CookieClickerPage.class);
         page.getPage();
-        page.setup();
+        page.closePopups();
         page.gameplayLoop();
     }
 }
