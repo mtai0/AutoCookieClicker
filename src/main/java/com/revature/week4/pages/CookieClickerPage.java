@@ -117,6 +117,10 @@ public class CookieClickerPage {
 
         buyProductUntilCount("Farm", 3);
         buyProductUntilCount("Grandma", 10);
+
+        clickCookieUntilCount(5000);
+        buyUpgrade("Steel-plated rolling pins", 10);
+        
         buyProductUntilCount("Farm", 5);
     }
 
